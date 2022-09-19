@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  multipart-upload-app
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Resources:
+  multipartUploadFromLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/hello-from-lambda.multipartUploadHandler
+      Runtime: nodejs16.x
+      FunctionName: "multipartUploadLambda"
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 30
+      Description: Lambda Function for multipartUpload to s3 Bucket.
+      Role: !GetAtt multipartUploadFunctionRole.Arn
+      Events:
+        MultipartUpload:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /upload
+            Method: get
+
+  multipartUploadFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "multipartUploadFunctionRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: lambda.amazonaws.com
+      Policies:
+        - PolicyName: "s3-put-object-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:PutObject"
+                Resource: "arn:aws:s3:::lswn-multipart-upload-bucket/*"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
